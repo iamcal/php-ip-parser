@@ -71,10 +71,10 @@ class IPParser{
 			$f = hexdec($m[6]);
 			$g = hexdec($m[7]);
 			$h = hexdec($m[8]);
-			return [
+			return array(
 				'type'		=> 'ipv6',
 				'canonical'	=> sprintf('%x:%x:%x:%x:%x:%x:%x:%x', $a, $b, $c, $d, $e, $f, $g, $h),
-			];
+			);
 		}
 
 		throw new \Exception('Invalid');
@@ -86,10 +86,10 @@ class IPParser{
 			throw new \Exception('Invalid');
 		}
 
-		return [
+		return array(
 			'type'		=> 'ipv4',
 			'canonical'	=> "{$a}.{$b}.{$c}.{$d}",
-		];
+		);
 	}
 
 	private function process_ipv4_atom($atom){
