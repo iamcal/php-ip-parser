@@ -11,17 +11,19 @@
 
 		function testElided(){
 
-		#	$this->assertEquals($this->to_canonical("1:2::3:4"), "1:2:0:0:0:0:3:4", "Elided zeros in middle");
-		#	$this->assertEquals($this->to_canonical("::1"), "0:0:0:0:0:0:0:1", "Elided zeros at start");
-		#	$this->assertEquals($this->to_canonical("1::"), "1:0:0:0:0:0:0:0", "Elided zeros at end");
-		#	$this->assertEquals($this->to_canonical("::"), "0:0:0:0:0:0:0:0", "Elided zeros entirely");
+			$this->assertEquals($this->to_canonical("1:2::3:4"), "1:2:0:0:0:0:3:4", "Elided zeros in middle");
+			$this->assertEquals($this->to_canonical("::1"), "0:0:0:0:0:0:0:1", "Elided zeros at start");
+			$this->assertEquals($this->to_canonical("1::"), "1:0:0:0:0:0:0:0", "Elided zeros at end");
+			$this->assertEquals($this->to_canonical("::"), "0:0:0:0:0:0:0:0", "Elided zeros entirely");
 		}
 
 		function testQuad(){
 
-		#	$this->assertEquals($this->to_canonical("1:2:3:4:5:6:77.77.88.88"), "1:2:3:4:5:6:4d4d:5858", "Dotted quad allowed for final 2 segments");
+			$this->assertEquals($this->to_canonical("1:2:3:4:5:6:77.77.88.88"), "1:2:3:4:5:6:4d4d:5858", "Dotted quad allowed for final 2 segments");
 
-		#	$this->assertEquals($this->to_canonical("fe80::1.2.3.4"), "fe80:0:0:0:0:0:102:304", "Dotted quad combined with elided zeros");
+			$this->assertEquals($this->to_canonical("fe80::1.2.3.4"), "fe80:0:0:0:0:0:102:304", "Dotted quad combined with elided zeros");
+
+			$this->assertEquals($this->to_canonical("1:2:3:4:5:6:77.77.0x58.0130"), "1:2:3:4:5:6:4d4d:5858", "Dotted quad with hex and octal atoms");
 		}
 
 		function testLeadingZeros(){
