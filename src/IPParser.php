@@ -21,8 +21,8 @@ class IPParser{
 		}
 
 		# simple IPv6 colon-hex
-		$atom6 = '[0-9a-f]{1,4}';
-		if (preg_match("!^($atom6):($atom6):($atom6):($atom6):($atom6):($atom6):($atom6):($atom6)$!i", $in, $m)){
+		$atom6 = '[0-9a-fA-F]{1,4}';
+		if (preg_match("!^($atom6):($atom6):($atom6):($atom6):($atom6):($atom6):($atom6):($atom6)$!", $in, $m)){
 			$a = hexdec($m[1]);
 			$b = hexdec($m[2]);
 			$c = hexdec($m[3]);
@@ -58,7 +58,74 @@ class IPParser{
 		}
 
 
-		# IPv6 with trailing dotted quad
+		# IPv6 with elided parts
+		if (strpos($in, '::') !== false){
+			list($in1, $in2) = explode('::', $in, 2);
+
+			# get atoms from before the split
+			if (strlen($in1)){
+				if (preg_match("!^($atom6)(?::($atom6)){0,6}$!", $in1, $m)){
+					$pre_atoms = array();
+					foreach (array_slice($m, 1) as $atom){
+						$pre_atoms[] = hexdec($atom);
+					}
+				}else{
+					throw new \Exception('Invalid');
+				}
+			}else{
+				$pre_atoms = array();
+			}
+
+			# get atoms from after the split
+			if (strlen($in2)){
+				# simple atoms
+				if (preg_match("!^($atom6)(?::($atom6)){0,6}$!", $in2, $m)){
+					$post_atoms = [];
+					foreach (array_slice($m, 1) as $atom){
+						$post_atoms[] = hexdec($atom);
+					}
+
+				# trailing dotted quad
+				}else if(preg_match("!^(?:($atom6):){0,6}($ipv4)$!", $in2, $m)){
+
+					$parts = explode(':', $in2);
+					$in3 = array_pop($parts);
+
+					if (preg_match("!^{$ipv4}$!", $in3, $m)){
+						$quad = $this->decode_ipv4($m);
+					}else{
+						throw new \Exception('Invalid');
+					}
+
+					$post_atoms = array();
+					foreach ($parts as $part) $post_atoms[] = hexdec($part);
+					$post_atoms[] = ($quad[0] << 8) + $quad[1];
+					$post_atoms[] = ($quad[2] << 8) + $quad[3];
+				}else{
+					throw new \Exception('Invalid');
+				}
+			}else{
+				$post_atoms = array();
+			}
+
+
+			# too many atoms?
+			$total = count($pre_atoms) + count($post_atoms);
+			if ($total > 7){
+				throw new \Exception('Invalid');
+			}
+
+			# glue together
+			$atoms = array();
+			foreach ($pre_atoms as $atom) $atoms[] = $atom;
+			for ($i=0; $i<(8-$total); $i++) $atoms[] = 0;
+			foreach ($post_atoms as $atom) $atoms[] = $atom;
+
+			return $this->process_ipv6($atoms[0], $atoms[1], $atoms[2], $atoms[3], $atoms[4], $atoms[5], $atoms[6], $atoms[7]);
+		}
+
+
+		# IPv6 with trailing dotted quad (no elided parts)
 		if (preg_match("!^($atom6):($atom6):($atom6):($atom6):($atom6):($atom6):{$ipv4}$!i", $in, $m)){
 			$a = hexdec($m[1]);
 			$b = hexdec($m[2]);
