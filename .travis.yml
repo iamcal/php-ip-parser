@@ -39,7 +39,6 @@ install:
   - if [[ $COVERAGE == true ]]; then composer require "php-coveralls/php-coveralls"; mkdir -p build/logs; fi
 
 script:
-  - mkdir -p build/logs
   - if [[ $COVERAGE == true ]]; then ./vendor/bin/phpunit --coverage-clover build/logs/clover.xml; fi
   - if [[ $COVERAGE != true ]]; then ./vendor/bin/phpunit; fi
 
