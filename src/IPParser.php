@@ -65,8 +65,9 @@ class IPParser{
 			# get atoms from before the split
 			if (strlen($in1)){
 				if (preg_match("!^($atom6)(?::($atom6)){0,6}$!", $in1, $m)){
+					$parts = explode(':', $in1);
 					$pre_atoms = array();
-					foreach (array_slice($m, 1) as $atom){
+					foreach ($parts as $atom){
 						$pre_atoms[] = hexdec($atom);
 					}
 				}else{
@@ -80,8 +81,9 @@ class IPParser{
 			if (strlen($in2)){
 				# simple atoms
 				if (preg_match("!^($atom6)(?::($atom6)){0,6}$!", $in2, $m)){
+					$parts = explode(':', $in2);
 					$post_atoms = array();
-					foreach (array_slice($m, 1) as $atom){
+					foreach ($parts as $atom){
 						$post_atoms[] = hexdec($atom);
 					}
 
