@@ -32,10 +32,7 @@ class IPParser{
 			$g = hexdec($m[7]);
 			$h = hexdec($m[8]);
 
-			return array(
-				'type'		=> 'ipv6',
-				'canonical'	=> sprintf('%x:%x:%x:%x:%x:%x:%x:%x', $a, $b, $c, $d, $e, $f, $g, $h),
-			);
+			return $this->process_ipv6($a, $b, $c, $d, $e, $f, $g, $h);
 		}
 
 
@@ -75,10 +72,7 @@ class IPParser{
 			$g = ($quad[0] << 8) + $quad[1];
 			$h = ($quad[2] << 8) + $quad[3];
 
-			return array(
-				'type'		=> 'ipv6',
-				'canonical'	=> sprintf('%x:%x:%x:%x:%x:%x:%x:%x', $a, $b, $c, $d, $e, $f, $g, $h),
-			);
+			return $this->process_ipv6($a, $b, $c, $d, $e, $f, $g, $h);
 		}
 
 
@@ -94,6 +88,18 @@ class IPParser{
 		return array(
 			'type'		=> 'ipv4',
 			'canonical'	=> "{$a}.{$b}.{$c}.{$d}",
+		);
+	}
+
+	private function process_ipv6($a, $b, $c, $d, $e, $f, $g, $h){
+
+		if ($a > 65535 || $b  > 65535 || $c > 65535 || $d > 65535 || $e > 65535 || $f > 65535 || $g > 65535 || $h > 65535){
+			throw new \Exception('Invalid');
+		}
+
+		return array(
+			'type'		=> 'ipv6',
+			'canonical'	=> sprintf('%x:%x:%x:%x:%x:%x:%x:%x', $a, $b, $c, $d, $e, $f, $g, $h),
 		);
 	}
 
