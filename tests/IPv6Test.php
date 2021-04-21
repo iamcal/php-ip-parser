@@ -40,6 +40,15 @@
 			$this->assertEquals($this->to_canonical("00001:0002:0003:0004:0005:0006:0007:0008"), "Exception", "But no more than 4 hex-digits per segment");
 		}
 
+		function testTooLong(){
+
+			$this->assertEquals($this->to_canonical("1:2:3:4:5:6:7:8:9"), "Exception", "Too long");
+			$this->assertEquals($this->to_canonical("1:2:3:4::5:6:7:8"), "Exception", "Too long, elided 1");
+			$this->assertEquals($this->to_canonical("::1:2:3:4::5:6:7:8"), "Exception", "Too long, elided 2");
+			$this->assertEquals($this->to_canonical("1:2:3:4::5:6:7:8::"), "Exception", "Too long, elided 3");
+		}
+
+
 		function to_canonical($in){
 			$p = new iamcal\IPParser();
 			try {
