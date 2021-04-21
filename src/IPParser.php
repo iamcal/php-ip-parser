@@ -6,6 +6,10 @@ class IPParser{
 
 	public function parse($in){
 
+		#
+		# fast path rules
+		#
+
 		# simple IPv4 dotted quad
 		if (preg_match('!^([1-9]\d*)\.([1-9]\d*)\.([1-9]\d*)\.([1-9]\d*)$!', $in, $m)){
 			$a = intval($m[1]);
@@ -16,53 +20,9 @@ class IPParser{
 			return $this->process_ipv4($a, $b, $c, $d);
 		}
 
-		# more complex IPv4 rules
-		$atom = '(?:0[0-7]{3})|(?:0x[0-9a-fA-F]{2})|(?:\d+)';
-		if (preg_match("!^({$atom})\.({$atom})\.({$atom})\.({$atom})\$!", $in, $m)){
-			$a = $this->process_ipv4_atom($m[1]);
-			$b = $this->process_ipv4_atom($m[2]);
-			$c = $this->process_ipv4_atom($m[3]);
-			$d = $this->process_ipv4_atom($m[4]);
-
-			return $this->process_ipv4($a, $b, $c, $d);
-		}
-
-		# single long IPv4
-		if (preg_match('!^\d+$!', $in)){
-			$x = intval($in);
-			$a = ($x & 0xff000000) >> 24;
-			$b = ($x & 0xff0000) >> 16;
-			$c = ($x & 0xff00) >> 8;
-			$d = ($x & 0xff);
-
-			return $this->process_ipv4($a, $b, $c, $d);
-		}
-
-		# class B address
-		if (preg_match("!^({$atom})\.({$atom})\.(\d+)\$!", $in, $m)){
-			$a = $this->process_ipv4_atom($m[1]);
-			$b = $this->process_ipv4_atom($m[2]);
-			$x = intval($m[3]);
-			$c = ($x & 0xff00) >> 8;
-			$d = ($x & 0xff);
-
-			return $this->process_ipv4($a, $b, $c, $d);
-		}
-
-		# class A address
-		if (preg_match("!^({$atom})\.(\d+)\$!", $in, $m)){
-			$a = $this->process_ipv4_atom($m[1]);
-			$x = intval($m[2]);
-			$b = ($x & 0xff0000) >> 16;
-			$c = ($x & 0xff00) >> 8;
-			$d = ($x & 0xff);
-
-			return $this->process_ipv4($a, $b, $c, $d);
-		}
-
-
 		# simple IPv6 colon-hex
-		if (preg_match('!^([0-9a-f]{1,4}):([0-9a-f]{1,4}):([0-9a-f]{1,4}):([0-9a-f]{1,4}):([0-9a-f]{1,4}):([0-9a-f]{1,4}):([0-9a-f]{1,4}):([0-9a-f]{1,4})$!i', $in, $m)){
+		$atom6 = '[0-9a-f]{1,4}';
+		if (preg_match("!^($atom6):($atom6):($atom6):($atom6):($atom6):($atom6):($atom6):($atom6)$!i", $in, $m)){
 			$a = hexdec($m[1]);
 			$b = hexdec($m[2]);
 			$c = hexdec($m[3]);
@@ -71,11 +31,56 @@ class IPParser{
 			$f = hexdec($m[6]);
 			$g = hexdec($m[7]);
 			$h = hexdec($m[8]);
+
 			return array(
 				'type'		=> 'ipv6',
 				'canonical'	=> sprintf('%x:%x:%x:%x:%x:%x:%x:%x', $a, $b, $c, $d, $e, $f, $g, $h),
 			);
 		}
+
+
+		#
+		# slow path rules
+		#
+
+		# complex IPv4 formats
+		$atom4 = '(?:0[0-7]{3})|(?:0x[0-9a-fA-F]{2})|(?:[1-9]\d*)';
+
+		$ipv4_quad	= "({$atom4})\.({$atom4})\.({$atom4})\.({$atom4})";
+		$ipv4_long	= "\d+";
+		$ipv4_class_b	= "({$atom4})\.({$atom4})\.([1-9]\d*)";
+		$ipv4_class_a	= "({$atom4})\.([1-9]\d*)";
+
+		$ipv4 = "(?:($ipv4_quad)|($ipv4_long)|($ipv4_class_b)|($ipv4_class_a))";
+
+		if (preg_match("!^{$ipv4}$!", $in, $m)){
+
+			$quad = $this->decode_ipv4($m);
+
+			return $this->process_ipv4($quad[0], $quad[1], $quad[2], $quad[3]);
+		}
+
+
+		# IPv6 with trailing dotted quad
+		if (preg_match("!^($atom6):($atom6):($atom6):($atom6):($atom6):($atom6):{$ipv4}$!i", $in, $m)){
+			$a = hexdec($m[1]);
+			$b = hexdec($m[2]);
+			$c = hexdec($m[3]);
+			$d = hexdec($m[4]);
+			$e = hexdec($m[5]);
+			$f = hexdec($m[6]);
+
+			$quad = $this->decode_ipv4(array_slice($m, 6));
+
+			$g = ($quad[0] << 8) + $quad[1];
+			$h = ($quad[2] << 8) + $quad[3];
+
+			return array(
+				'type'		=> 'ipv6',
+				'canonical'	=> sprintf('%x:%x:%x:%x:%x:%x:%x:%x', $a, $b, $c, $d, $e, $f, $g, $h),
+			);
+		}
+
 
 		throw new \Exception('Invalid');
 	}
@@ -104,5 +109,56 @@ class IPParser{
 
 		return intval($atom);
 	}
+
+
+	private function decode_ipv4($m){
+
+		$a = 0;
+		$b = 0;
+		$c = 0;
+		$d = 0;
+
+		# quad
+		if (isset($m[1]) && strlen($m[1])){
+			$a = $this->process_ipv4_atom($m[2]);
+			$b = $this->process_ipv4_atom($m[3]);
+			$c = $this->process_ipv4_atom($m[4]);
+			$d = $this->process_ipv4_atom($m[5]);
+		}
+
+		# long
+		if (isset($m[6]) && strlen($m[6])){
+			$x = intval($m[6]);
+			$a = ($x & 0xff000000) >> 24;
+			$b = ($x & 0xff0000) >> 16;
+			$c = ($x & 0xff00) >> 8;
+			$d = ($x & 0xff);
+		}
+
+		# class B
+		if (isset($m[7]) && strlen($m[7])){
+			$a = $this->process_ipv4_atom($m[8]);
+			$b = $this->process_ipv4_atom($m[9]);
+			$x = intval($m[10]);
+			$c = ($x & 0xff00) >> 8;
+			$d = ($x & 0xff);
+		}
+
+		# class A
+		if (isset($m[11]) && strlen($m[11])){
+			$a = $this->process_ipv4_atom($m[12]);
+			$x = intval($m[13]);
+			$b = ($x & 0xff0000) >> 16;
+			$c = ($x & 0xff00) >> 8;
+			$d = ($x & 0xff);
+		}
+
+		if ($a > 255 || $b > 255 || $c > 255 || $d > 255){
+			throw new \Exception('Invalid');
+		}
+
+		return array($a, $b, $c, $d);
+	}
+
 
 }
