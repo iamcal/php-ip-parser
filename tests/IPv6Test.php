@@ -7,6 +7,9 @@
 		function testBasic(){
 
 			$this->assertEquals($this->to_canonical("1:2:3:4:5:6:7:8"), "1:2:3:4:5:6:7:8", "Simple colon-hex");
+
+			$this->assertEquals($this->to_canonical("1:2:3:4:5:6:7:ffff"), "1:2:3:4:5:6:7:ffff", "Simple colon-hex: in-bounds");
+			$this->assertEquals($this->to_canonical("1:2:3:4:5:6:7:10000"), "Exception", "Simple colon-hex: in-bounds");
 		}
 
 		function testElided(){
