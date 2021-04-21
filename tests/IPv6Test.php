@@ -24,6 +24,11 @@
 			$this->assertEquals($this->to_canonical("fe80::1.2.3.4"), "fe80:0:0:0:0:0:102:304", "Dotted quad combined with elided zeros");
 
 			$this->assertEquals($this->to_canonical("1:2:3:4:5:6:77.77.0x58.0130"), "1:2:3:4:5:6:4d4d:5858", "Dotted quad with hex and octal atoms");
+
+			$this->assertEquals($this->to_canonical("1:2:3:4:5:6:77.77.22616"), "1:2:3:4:5:6:4d4d:5858", "Dotted quad with class B");
+			$this->assertEquals($this->to_canonical("1:2:3:4:5:6:77.5068888"), "1:2:3:4:5:6:4d4d:5858", "Dotted quad with class A");
+
+			$this->assertEquals($this->to_canonical("1:2:3:4:5:6:1296914520"), "1:2:3:4:5:6:4d4d:5858", "Dotted quad with long");
 		}
 
 		function testLeadingZeros(){
