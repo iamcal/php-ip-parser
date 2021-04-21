@@ -80,7 +80,7 @@ class IPParser{
 			if (strlen($in2)){
 				# simple atoms
 				if (preg_match("!^($atom6)(?::($atom6)){0,6}$!", $in2, $m)){
-					$post_atoms = [];
+					$post_atoms = array();
 					foreach (array_slice($m, 1) as $atom){
 						$post_atoms[] = hexdec($atom);
 					}
