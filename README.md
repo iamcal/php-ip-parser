@@ -27,3 +27,4 @@ The single public method, `->parse()`, takes a string and returns an array with 
 The `type` will either be `"ipv4"` or `"ipv6"`, while the `canonical` key will contain a canonicalized version of the IP.
 
 Invalid IPs will throw a catchable exception.
+
